@@ -1,66 +1,181 @@
-"use client"
-import React, { useState, ChangeEvent, FormEvent } from 'react';
-import {Input} from "@nextui-org/input";
+"use client";
+import { useState, ChangeEvent, FormEvent, useMemo } from "react";
+import { Input } from "@nextui-org/input";
 import { Button } from "@nextui-org/button";
 import { Url } from "url";
+import { Link } from "@nextui-org/link";
 
 export default function App() {
+	const [resourceUrl, setResourceUrl] = useState("");
+	const [isLoading, setIsLoading] = useState(false);
 
-  const [resourceUrl, setResourceUrl] = React.useState("");
+	const [requiresCaptcha, setRequiresCaptcha] = useState(false);
+	const [captchaValue, setCaptchaValue] = useState("");
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+	const [downloadLink, setDownloadLink] = useState("");
 
-    console.log(resourceUrl)
+	const submitCaptcha = (e: FormEvent<HTMLFormElement>) => {
+		e.preventDefault();
 
-    //request to Vercel HOST / ?url=thesimsresource
+		//extract id from url
 
-    // if response is captcha true -> redirect to captcha form 
+		let id = resourceUrl.split("id/")[1];
 
-  };
+		setIsLoading(true);
 
-  function validateUrl(url: string): boolean {
-    try {
-      new URL(url);
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
+		fetch(`/api/captcha?id=${id}&captchaValue=${captchaValue}`)
+			.then(async (result) => {
+				if (result.status == 200) {
+					setRequiresCaptcha(false);
+					handleSubmit(e);
+				}
 
-  const validateEmail = (value: string) => value.match(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+.[A-Z]{2,4}$/i);
+				//if captcha true
+				//redirect to captcha form
+			})
+			.catch((e: any) => {
+				setIsLoading(false);
+				console.log(e);
+			});
 
-  const isInvalid = React.useMemo(() => {
-    if (resourceUrl === "") return true
+		console.log(captchaValue);
 
-    return validateUrl(resourceUrl) ? false : true;
-  }, [resourceUrl]);
+		//request to Vercel HOST /captcha/captchaValue
 
-  return (
-    <div>
-      <form onSubmit={handleSubmit}>
-    <Input
-      value={resourceUrl}
-      type="url"
-      label="URL"
-      variant="bordered"
-      isInvalid={isInvalid}
-      color={isInvalid ? "danger" : "success"}
-      errorMessage={isInvalid && "Please enter a valid url"}
-      onValueChange={setResourceUrl}
-      className="max-w-xs"
-    />
-    <Button type="submit" color="primary">
-        Submit
-      </Button>	
-      </form>
+		// if response is captcha true -> redirect to captcha form
+	};
 
-  <form /* onSubmit={}  */method="POST" className="flex w-full flex-wrap md:flex-nowrap gap-4">
-  <input type="url" name="url" placeholder="Enter https://www.thesimsresource.com/ content URL" />
-	    <button type="submit" color="primary">
-        Submit
-      </button>	
-</form>
-  </div>
-  );
+	const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+		e.preventDefault();
+
+		setIsLoading(true);
+		fetch(`/api?url=${resourceUrl}`)
+			.then(async (result) => {
+				setIsLoading(false);
+
+				const data: {
+					captcha?: boolean;
+					url: any;
+					method: any;
+					headers: any;
+					body: any;
+				} = await result.json();
+
+				//if captcha true
+				//show captcha form
+				if (data.captcha) {
+					setRequiresCaptcha(true);
+					return;
+				}
+
+				setDownloadLink(data.url);
+
+				/* console.log(data.url);
+				console.log("opening in new tab...");
+				window.open(data.url, "_blank");
+
+				await fetch(data.url, {
+					method: data.method,
+					headers: data.headers,
+					body: data.body,
+					mode: "no-cors",
+				}).then((result) => {
+					console.log(result);
+					setIsLoading(false);
+				}); */
+			})
+			.catch((e: any) => {
+				console.log(e);
+				setIsLoading(false);
+			});
+	};
+
+	function validateUrl(url: string): boolean {
+		try {
+			new URL(url);
+			return true;
+		} catch (error) {
+			return false;
+		}
+	}
+
+	const validateEmail = (value: string) =>
+		value.match(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+.[A-Z]{2,4}$/i);
+
+	const isInvalid = useMemo(() => {
+		if (resourceUrl === "") return true;
+
+		return validateUrl(resourceUrl) ? false : true;
+	}, [resourceUrl]);
+
+	return (
+		<div>
+			<form
+				onSubmit={handleSubmit}
+				style={{ display: "flex", flexDirection: "row", alignItems: "center" }}
+			>
+				<Input
+					value={resourceUrl}
+					type="url"
+					label="URL"
+					variant="bordered"
+					isInvalid={isInvalid}
+					color={isInvalid ? "danger" : "success"}
+					errorMessage={isInvalid && "Please enter a valid url"}
+					description="Good to go!"
+					onValueChange={setResourceUrl}
+					className="max-w-xs"
+					placeholder="https://www.thesimsresource.com/..."
+				/>
+				<Button
+					type="submit"
+					color="primary"
+					isLoading={isLoading}
+					isDisabled={isInvalid}
+					style={{ marginBottom: "2em" }}
+				>
+					Submit
+				</Button>
+				{downloadLink ? (
+					<Button
+						href={downloadLink}
+						as={Link}
+						color="default"
+						showAnchorIcon
+						variant="faded"
+						style={{ marginBottom: "2em" }}
+					>
+						Download
+					</Button>
+				) : (
+					""
+				)}
+			</form>
+			{requiresCaptcha ? (
+				<div>
+					<img
+						width="250"
+						height="250"
+						alt="captcha image"
+						src="https://f003.backblazeb2.com/file/thesimsresource/captcha.png"
+					/>
+					<form onSubmit={submitCaptcha}>
+						<Input
+							value={captchaValue}
+							type="text"
+							label="captcha"
+							variant="bordered"
+							onValueChange={setCaptchaValue}
+							className="max-w-xs"
+						/>
+						<Button type="submit" color="primary" isLoading={isLoading}>
+							Submit
+						</Button>
+					</form>
+				</div>
+			) : (
+				""
+			)}
+		</div>
+	);
 }

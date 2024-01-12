@@ -24,15 +24,21 @@ module.exports = async () => {
 	await page.setViewport({ width: device_width, height: device_height })
 	await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36');
 
-    const cookies = await redis.get("cookies")
+	//page.setRequestInterception(true)
 
-    //const cookies = await kv.get("cookies");
+	const client = await page.target().createCDPSession();
+	await client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: '/tmp' })
 
-    if (cookies) {
-        await page.setCookie(...cookies);
-    } else {
-        console.log("previous cookies not found")
-    }
 
-    return { browser, page }
+	const cookies = await redis.get("cookies")
+
+	//const cookies = await kv.get("cookies");
+
+	if (cookies) {
+		await page.setCookie(...cookies);
+	} else {
+		console.log("previous cookies not found")
+	}
+
+	return { browser, page }
 }
