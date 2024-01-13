@@ -9,14 +9,7 @@ export default function App() {
 	const validateEmail = (value: string) =>
 		value.match(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+.[A-Z]{2,4}$/i);
 
-	const [array1, setArray1] = useState([
-		{
-			resourceUrl,
-			isLoading,
-			requiresCaptcha,
-			captchaValue,
-		},
-	]);
+	const [array1, setArray1] = useState([1]);
 
 	const Component1 = () => {
 		const [resourceUrl, setResourceUrl] = useState("");
