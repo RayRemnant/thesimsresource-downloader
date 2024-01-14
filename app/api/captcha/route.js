@@ -1,11 +1,9 @@
 const init = require("../_init.js")
-const backblaze = require("../storage/backblaze.js")
 
 import { NextResponse } from "next/server";
 
 
 export async function GET(request) {
-	const backblazeClient = await backblaze.getUploadAuth({});
 
 
 	const searchParams = request.nextUrl.searchParams
@@ -24,11 +22,8 @@ export async function GET(request) {
 	console.log(`NAVIGATING TO: https://www.thesimsresource.com/downloads/session/itemId/${id}`)
 	await page.goto(`https://www.thesimsresource.com/downloads/session/itemId/${id}`);
 
-	await backblaze.upload(
-		backblazeClient,
-		"troubleshoot/captchaPage.png",
-		await page.screenshot({ fullPage: true })
-	);
+	await page.screenshot({ path: 'generated/captchaPage.png' });
+
 
 	//get ID from url
 
@@ -50,12 +45,7 @@ export async function GET(request) {
 	} catch (error) {
 		console.log(error)
 
-		await backblaze.upload(
-			backblazeClient,
-			"troubleshoot/onError.png",
-			await page.screenshot({ fullPage: true })
-		);
-		await page.screenshot({ path: process.cwd() + 'troubleshoot/onError.png' });
+		await page.screenshot({ path: 'generated/onError.png' });
 
 		return NextResponse.json({ error }, { status: 500 });
 	}

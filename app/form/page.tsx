@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 import { useState, ChangeEvent, FormEvent, useMemo } from "react";
 import { Input } from "@nextui-org/input";
@@ -10,6 +11,7 @@ export default function App() {
 	const [isLoading, setIsLoading] = useState(false);
 
 	const [requiresCaptcha, setRequiresCaptcha] = useState(false);
+	const [captchaImage, setCaptchaImage] = useState(undefined);
 	const [captchaValue, setCaptchaValue] = useState("");
 
 	const [downloadLink, setDownloadLink] = useState("");
@@ -54,7 +56,7 @@ export default function App() {
 				setIsLoading(false);
 
 				const data: {
-					captcha?: boolean;
+					captcha?: any;
 					url: any;
 					method: any;
 					headers: any;
@@ -65,6 +67,7 @@ export default function App() {
 				//show captcha form
 				if (data.captcha) {
 					setRequiresCaptcha(true);
+					setCaptchaImage(data.captcha);
 					return;
 				}
 
@@ -136,7 +139,7 @@ export default function App() {
 				>
 					Submit
 				</Button>
-				{downloadLink ? (
+				{downloadLink && !isLoading ? (
 					<Button
 						href={downloadLink}
 						as={Link}
@@ -151,14 +154,13 @@ export default function App() {
 					""
 				)}
 			</form>
-			{requiresCaptcha ? (
+			{requiresCaptcha && captchaImage ? (
 				<div>
 					<img
-						width="250"
-						height="250"
-						alt="captcha image"
-						src="https://f003.backblazeb2.com/file/thesimsresource/captcha.png"
+						src={`data:image/jpeg;base64,${captchaImage}`}
+						alt="Buffer Image"
 					/>
+
 					<form onSubmit={submitCaptcha}>
 						<Input
 							value={captchaValue}

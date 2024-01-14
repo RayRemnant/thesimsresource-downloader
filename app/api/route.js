@@ -1,10 +1,8 @@
 //import { kv } from "@vercel/kv"
 import { NextResponse } from "next/server";
 
-const redis = require("./_redis.js")
-
 const init = require("./_init.js")
-const backblaze = require("./storage/backblaze.js")
+const cookiesStorage = require("./db/_cookiesStorage.js")
 
 export async function GET(request) {
 
@@ -12,10 +10,9 @@ export async function GET(request) {
 	const url = searchParams.get('url')
 	console.log("URL ", url)
 
-
 	const { browser, page } = await init()
 
-	const backblazeClient = await backblaze.getUploadAuth({});
+	let imageBase64
 
 	try {
 
@@ -30,11 +27,9 @@ export async function GET(request) {
 			if (url.includes('captcha-image')) {
 				const imageBuffer = await response.buffer(); // Get response content as buffer
 
-				backblaze.upload(
-					backblazeClient,
-					"captcha.png",
-					imageBuffer
-				);
+				imageBase64 = imageBuffer.toString('base64')
+
+				await page.screenshot({ path: 'generated/captcha.png' });
 			}
 		});
 
@@ -61,11 +56,8 @@ export async function GET(request) {
 		}
 
 		console.log("TAKING SCREENSHOT...")
-		backblaze.upload(
-			backblazeClient,
-			"troubleshoot/beforeCaptcha.png",
-			await page.screenshot({ fullPage: true })
-		);
+		await page.screenshot({ path: 'generated/beforeCaptcha.png' });
+
 
 		/* const captchaImage = await page.$$(".wrapper.group.takeover img")
 		await captchaImage[0].screenshot({ path: __dirname + '/captcha.png' }); */
@@ -76,11 +68,11 @@ export async function GET(request) {
 			console.log("CHECKING IF CAPTCHA REQUEST PRESENT...")
 			const captchaInputElement = await page.waitForSelector(captchaInput, { visible: true, timeout: 5555 })
 			console.log("CAPTCHA PRESENT, RESOLVE MANUALLY")
-			const cookies = await page.cookies();
 
-			await redis.set('cookies', JSON.stringify(cookies));
+			await cookiesStorage.save(await page.cookies())
+
 			//await kv.set("cookies", JSON.stringify(cookies))
-			return NextResponse.json({ captcha: true }, { status: 200 });
+			return NextResponse.json({ captcha: imageBase64 }, { status: 200 });
 		}
 		catch (e) {
 			console.log(e)
@@ -88,7 +80,6 @@ export async function GET(request) {
 			const download = require("./_download.js")
 
 			try {
-
 				return NextResponse.json(await download(page), { status: 500 });
 			} catch (error) {
 				return NextResponse.json({ error }, { status: 500 });
@@ -100,11 +91,8 @@ export async function GET(request) {
 	} catch (e) {
 		console.log(e)
 
-		await backblaze.upload(
-			backblazeClient,
-			"troubleshoot/onError.png",
-			await page.screenshot({ fullPage: true })
-		);
+		await page.screenshot({ path: 'generated/onError.png' });
+
 
 		return NextResponse.json({ error }, { status: 500 });
 	} finally {

@@ -1,18 +1,12 @@
-const backblaze = require("./storage/backblaze.js");
-
+const cookiesStorage = require("./db/_cookiesStorage.js")
 //import { kv } from '@vercel/kv';
-const redis = require("./_redis.js");
 
+// eslint-disable-next-line import/no-anonymous-default-export
 module.exports = async (page) => {
-	const backblazeClient = await backblaze.getUploadAuth({});
 
 	try {
 		console.log("TAKING SCREENSHOT...");
-		backblaze.upload(
-			backblazeClient,
-			"troubleshoot/afterCaptcha.png",
-			await page.screenshot({ fullPage: true })
-		);
+		await page.screenshot({ path: 'generated/afterCaptcha.png' });
 
 		/* //set download directory 
 			const currentDirectory = process.cwd();
@@ -29,11 +23,8 @@ module.exports = async (page) => {
 			await cookiesPopupButton.click();
 			console.log("COOKIES POPUP CLOSED");
 
-			backblaze.upload(
-				backblazeClient,
-				"troubleshoot/afterCookiesPopup.png",
-				await page.screenshot({ fullPage: true })
-			);
+			await page.screenshot({ path: 'generated/afterCookiesPopup.png' });
+
 		} catch (e) {
 			console.log("COOKIES POPUP ERROR: ", e);
 		}
@@ -46,20 +37,10 @@ module.exports = async (page) => {
 		await downloadButton.click();
 
 		console.log("TAKING SCREENSHOT...");
-		backblaze.upload(
-			backblazeClient,
-			"troubleshoot/afterDowloadClick.png",
-			await page.screenshot({ fullPage: true })
-		);
+		await page.screenshot({ path: 'generated/afterDownloadClick.png' });
+
 
 		//await page.waitForNavigation()
-		/* 
-			console.log("TAKING SCREENSHOT...")
-			backblaze.upload(
-				backblazeClient,
-				"troubleshoot/afterDowload.png",
-				await page.screenshot({ fullPage: true })
-			); */
 
 		console.log("WAITING FOR MANUAL DOWNLOAD BUTTON...");
 		const manualDownloadButton = await page.waitForSelector(
@@ -144,27 +125,24 @@ module.exports = async (page) => {
 		await onResponse
 
 		try {
-			redis.set("cookies", JSON.stringify(await page.cookies()));
+			const cookies = await page.cookies()
+
+			await cookiesStorage.save(cookies)
+
 			console.log("COOKIES SAVED");
 		} catch (error) {
 			console.error("COOKIES ERROR: ", error);
 		}
 
 		console.log("TAKING SCREENSHOT...");
-		backblaze.upload(
-			backblazeClient,
-			"troubleshoot/afterManualDownload.png",
-			await page.screenshot({ fullPage: true })
-		);
+		await page.screenshot({ path: 'generated/afterManualDownload.png' });
+
 
 		return responseData
 
 	} catch (e) {
 		console.log(e);
-		await backblaze.upload(
-			backblazeClient,
-			"troubleshoot/onError.png",
-			await page.screenshot({ fullPage: true })
-		);
+		await page.screenshot({ path: 'generated/onError.png' });
+
 	}
 };

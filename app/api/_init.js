@@ -4,16 +4,13 @@ const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 // eslint-disable-next-line new-cap
 puppeteer.use(StealthPlugin());
 
-const redis = require("./_redis.js")
+const cookiesStorage = require("./db/_cookiesStorage.js")
 
-
-module.exports = async () => {
+module.exports = async function init() {
 
 	const browser = await puppeteer.launch({
 		headless: true,
 		// args: ['--proxy-server=http://158.247.199.162:3128'],
-
-
 	});
 	const page = (await browser.pages())[0];
 
@@ -29,8 +26,9 @@ module.exports = async () => {
 	const client = await page.target().createCDPSession();
 	await client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: '/tmp' })
 
-
-	const cookies = await redis.get("cookies")
+	//db.read()
+	const cookies = await cookiesStorage.get()
+	console.log("INIT COOKIES ", cookies)
 
 	//const cookies = await kv.get("cookies");
 
