@@ -1,16 +1,7 @@
 export type SiteConfig = typeof siteConfig;
 
 export const siteConfig = {
-	name: "Next.js + NextUI",
-	description: "Make beautiful websites regardless of your design experience.",
-	navItems: [
-		{
-			label: "Home",
-			href: "/",
-		},
-		{
-			label: "Form",
-			href: "/form",
-		},
-  	]
+	name: "The Sims Resource | Download Scraper",
+	description: "Download items from the sims resource in just a click",
+	navItems: [],
 };
