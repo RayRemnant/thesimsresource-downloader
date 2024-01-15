@@ -10,6 +10,7 @@ import { Spacer } from "@nextui-org/spacer";
 import { Image } from "@nextui-org/image";
 import { Divider } from "@nextui-org/divider";
 
+import { useRef } from "react";
 //TODO: loses focus on insertion inside input field
 
 interface Request {
@@ -53,6 +54,7 @@ export default function App() {
 	const updateRequest = (index: number, updatedRequest: Request): void => {
 		setRequests((prevRequests) => {
 			const newRequests = [...prevRequests];
+			prevRequests[index] = updatedRequest;
 			newRequests[index] = updatedRequest;
 			return newRequests;
 		});
