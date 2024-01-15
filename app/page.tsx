@@ -10,55 +10,104 @@ import { Spacer } from "@nextui-org/spacer";
 import { Image } from "@nextui-org/image";
 import { Divider } from "@nextui-org/divider";
 
+//TODO: loses focus on insertion inside input field
+
+interface Request {
+	resourceUrl: string;
+	isLoading: boolean;
+	requiresCaptcha: boolean;
+	captchaImage?: string;
+	captchaValue: string;
+	downloadLink: string;
+}
+
 export default function App() {
-	const [resourceUrl, setResourceUrl] = useState("");
-	const [isLoading, setIsLoading] = useState(false);
+	const [requests, setRequests] = useState<Request[]>([
+		{
+			resourceUrl: "",
+			isLoading: false,
+			requiresCaptcha: false,
+			captchaImage: undefined,
+			captchaValue: "",
+			downloadLink: "",
+		},
+	]);
 
-	const [requiresCaptcha, setRequiresCaptcha] = useState(false);
-	const [captchaImage, setCaptchaImage] = useState(undefined);
-	const [captchaValue, setCaptchaValue] = useState("");
+	const addRequest = (): void => {
+		setRequests((prevRequests) => {
+			const newRequests = [
+				...prevRequests,
+				{
+					resourceUrl: "",
+					isLoading: false,
+					requiresCaptcha: false,
+					captchaImage: undefined,
+					captchaValue: "",
+					downloadLink: "",
+				},
+			];
+			return newRequests;
+		});
+	};
 
-	const [downloadLink, setDownloadLink] = useState("");
+	const updateRequest = (index: number, updatedRequest: Request): void => {
+		setRequests((prevRequests) => {
+			const newRequests = [...prevRequests];
+			newRequests[index] = updatedRequest;
+			return newRequests;
+		});
+	};
 
-	const submitCaptcha = (e: FormEvent<HTMLFormElement>) => {
+	const submitCaptcha = (e: FormEvent<HTMLFormElement>, index: number) => {
 		e.preventDefault();
 
+		const request = requests[index];
 		//extract id from url
 
-		let id = resourceUrl.split("id/")[1];
+		let id = request.resourceUrl.split("id/")[1];
 
-		setIsLoading(true);
+		updateRequest(index, { ...request, isLoading: true });
 
-		fetch(`/api/captcha?id=${id}&captchaValue=${captchaValue}`)
+		fetch(`/api/captcha?id=${id}&captchaValue=${request.captchaValue}`)
 			.then(async (result) => {
 				if (result.status == 200) {
-					setRequiresCaptcha(false);
-					handleSubmit(e);
+					updateRequest(index, { ...request, requiresCaptcha: false });
+
+					handleSubmit(e, index);
+
+					//loop through all open requests, if (requires captcha == true), resend request
 				}
 
 				//if captcha true
 				//redirect to captcha form
 			})
 			.catch((e: any) => {
-				setIsLoading(false);
+				updateRequest(index, { ...request, isLoading: false });
+
 				console.log(e);
 			});
 
-		console.log(captchaValue);
+		console.log(request.captchaValue);
 
 		//request to Vercel HOST /captcha/captchaValue
 
 		// if response is captcha true -> redirect to captcha form
 	};
 
-	const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+	const handleSubmit = (e: FormEvent<HTMLFormElement>, index: number) => {
 		e.preventDefault();
 
-		setIsLoading(true);
-		setRequiresCaptcha(false);
-		fetch(`/api?url=${resourceUrl}`)
+		const request = requests[index];
+
+		updateRequest(index, {
+			...request,
+			isLoading: true,
+			requiresCaptcha: false,
+		});
+
+		fetch(`/api?url=${request.resourceUrl}`)
 			.then(async (result) => {
-				setIsLoading(false);
+				updateRequest(index, { ...request, isLoading: false });
 
 				const data: {
 					captcha?: any;
@@ -71,12 +120,15 @@ export default function App() {
 				//if captcha true
 				//show captcha form
 				if (data.captcha) {
-					setRequiresCaptcha(true);
-					setCaptchaImage(data.captcha);
+					updateRequest(index, {
+						...request,
+						requiresCaptcha: true,
+						captchaImage: data.captcha,
+					});
 					return;
 				}
 
-				setDownloadLink(data.url);
+				updateRequest(index, { ...request, downloadLink: data.url });
 
 				/* console.log(data.url);
 				console.log("opening in new tab...");
@@ -94,7 +146,7 @@ export default function App() {
 			})
 			.catch((e: any) => {
 				console.log(e);
-				setIsLoading(false);
+				updateRequest(index, { ...request, isLoading: false });
 			});
 	};
 
@@ -110,13 +162,107 @@ export default function App() {
 	const validateEmail = (value: string) =>
 		value.match(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+.[A-Z]{2,4}$/i);
 
-	const isInvalid = useMemo(() => {
-		if (resourceUrl === "") return true;
-
-		return validateUrl(resourceUrl) ? false : true;
-	}, [resourceUrl]);
-
 	const maxWidth = "600px";
+
+	const SingleRequest = (request: Request & { index: number }) => {
+		const {
+			resourceUrl,
+			isLoading,
+			downloadLink,
+			requiresCaptcha,
+			captchaImage,
+			captchaValue,
+			index,
+		} = request;
+
+		const isInvalid = useMemo(() => {
+			if (resourceUrl === "") return true;
+
+			return validateUrl(resourceUrl) ? false : true;
+		}, [resourceUrl]);
+
+		return (
+			<div>
+				<form
+					onSubmit={(e) => handleSubmit(e, index)}
+					className="flex flex-row items-center flex-wrap"
+				>
+					<Input
+						value={resourceUrl}
+						type="url"
+						label="URL"
+						variant="bordered"
+						isInvalid={isInvalid}
+						color={isInvalid ? "danger" : "success"}
+						errorMessage={isInvalid && "Please enter a valid url"}
+						description={isLoading ? "Working on it..." : "Good to go!"}
+						onValueChange={(newValue) =>
+							updateRequest(index, { ...request, resourceUrl: newValue })
+						}
+						className="max-w-xs"
+						placeholder="https://www.thesimsresource.com/..."
+					/>
+					<Spacer x={2} />
+					<Button
+						type="submit"
+						color="primary"
+						isLoading={isLoading}
+						isDisabled={isInvalid}
+						style={{ marginBottom: "2em" }}
+					>
+						Submit
+					</Button>
+					<Spacer x={2} />
+					{downloadLink && !isLoading ? (
+						<Button
+							href={downloadLink}
+							as={Link}
+							color="default"
+							showAnchorIcon
+							variant="solid"
+							style={{ marginBottom: "2em" }}
+						>
+							Download Link
+						</Button>
+					) : (
+						""
+					)}
+				</form>
+				{requiresCaptcha && captchaImage ? (
+					<div>
+						<Divider />
+						<Spacer y={4} />
+						<Image
+							src={`data:image/jpeg;base64,${captchaImage}`}
+							alt="Buffer Image"
+						/>
+						<Spacer y={2} />
+						<form
+							onSubmit={(e) => submitCaptcha(e, index)}
+							className="flex flex-row items-center flex-wrap"
+						>
+							<Input
+								value={captchaValue}
+								type="text"
+								label="captcha"
+								variant="bordered"
+								onValueChange={(newValue) =>
+									updateRequest(index, { ...request, captchaValue: newValue })
+								}
+								className="max-w-xs"
+							/>
+							<Spacer x={2} />
+							<Button type="submit" color="primary" isLoading={isLoading}>
+								Submit
+							</Button>
+						</form>
+					</div>
+				) : (
+					""
+				)}
+			</div>
+		);
+	};
 
 	return (
 		<div style={{ maxWidth }}>
@@ -149,79 +295,15 @@ export default function App() {
 
 			<Spacer x={8} y={4} />
 
-			<form
-				onSubmit={handleSubmit}
-				className="flex flex-row items-center flex-wrap"
-			>
-				<Input
-					value={resourceUrl}
-					type="url"
-					label="URL"
-					variant="bordered"
-					isInvalid={isInvalid}
-					color={isInvalid ? "danger" : "success"}
-					errorMessage={isInvalid && "Please enter a valid url"}
-					description={isLoading ? "Working on it..." : "Good to go!"}
-					onValueChange={setResourceUrl}
-					className="max-w-xs"
-					placeholder="https://www.thesimsresource.com/..."
-				/>
-				<Spacer x={2} />
-				<Button
-					type="submit"
-					color="primary"
-					isLoading={isLoading}
-					isDisabled={isInvalid}
-					style={{ marginBottom: "2em" }}
-				>
-					Submit
-				</Button>
-				<Spacer x={2} />
-				{downloadLink && !isLoading ? (
-					<Button
-						href={downloadLink}
-						as={Link}
-						color="default"
-						showAnchorIcon
-						variant="solid"
-						style={{ marginBottom: "2em" }}
-					>
-						Download Link
-					</Button>
-				) : (
-					""
-				)}
-			</form>
-			{requiresCaptcha && captchaImage ? (
-				<div>
-					<Divider />
-					<Spacer y={4} />
-					<Image
-						src={`data:image/jpeg;base64,${captchaImage}`}
-						alt="Buffer Image"
-					/>
-					<Spacer y={2} />
-					<form
-						onSubmit={submitCaptcha}
-						className="flex flex-row items-center flex-wrap"
-					>
-						<Input
-							value={captchaValue}
-							type="text"
-							label="captcha"
-							variant="bordered"
-							onValueChange={setCaptchaValue}
-							className="max-w-xs"
-						/>
-						<Spacer x={2} />
-						<Button type="submit" color="primary" isLoading={isLoading}>
-							Submit
-						</Button>
-					</form>
+			{requests.map((item, index) => (
+				<div key={index}>
+					{index}
+					<SingleRequest {...item} index={index} key={index} />
 				</div>
-			) : (
-				""
-			)}
+			))}
+			<Button type="submit" color="primary" onClick={addRequest}>
+				+
+			</Button>
 		</div>
 	);
 }

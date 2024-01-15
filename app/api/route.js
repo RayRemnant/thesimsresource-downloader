@@ -94,7 +94,7 @@ export async function GET(request) {
 		await page.screenshot({ path: 'generated/onError.png' });
 
 
-		return NextResponse.json({ error }, { status: 500 });
+		return NextResponse.json({ e }, { status: 500 });
 	} finally {
 		browser.close()
 	}
