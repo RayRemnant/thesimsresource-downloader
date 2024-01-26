@@ -1,17 +1,142 @@
 "use client";
 
-import { useState } from "react";
+import { useState, FormEvent, useMemo, useEffect } from "react";
 import { Button } from "@nextui-org/button";
 
 import { SingleRequest } from "./SingleRequest";
 import { Accordion, AccordionItem } from "@nextui-org/accordion";
 import { Spacer } from "@nextui-org/spacer";
 
+import { Divider } from "@nextui-org/divider";
+import { Image } from "@nextui-org/image";
+import { Input } from "@nextui-org/input";
+import { Modal, ModalContent, useDisclosure } from "@nextui-org/modal";
+
 export default function App() {
 	const [requests, setRequests] = useState<number[]>([]);
+	const [requiresCaptcha, setRequiresCaptcha]: [
+		requiresCaptcha: boolean,
+		setRequiresCaptcha: React.Dispatch<React.SetStateAction<boolean>>
+	] = useState(false);
+
+	const [captchaImage, setCaptchaImage]: [
+		captchaImage: any,
+		setCaptchaImage: React.Dispatch<React.SetStateAction<any>>
+	] = useState(undefined);
+	const [captchaValue, setCaptchaValue] = useState("");
+
+	const [captchaError, setCaptchaError] = useState(false);
+
+	const [isLoading, setIsLoading] = useState(false);
+
+	//move requires captcha here
+
+	const { isOpen, onOpen, onClose } = useDisclosure();
+
+	const submitCaptcha = (e: FormEvent<HTMLFormElement>) => {
+		e.preventDefault();
+
+		setIsLoading(true);
+		fetch(`/api/captcha?id=1686374&captchaValue=${captchaValue}`)
+			.then(async (result) => {
+				if (result.status == 200) {
+					setRequiresCaptcha(false);
+					setIsLoading(false);
+					onClose();
+				}
+
+				if (result.status == 422) {
+					setIsLoading(false);
+					setCaptchaError(true);
+				}
+
+				setCaptchaValue("");
+
+				//if captcha true
+				//redirect to captcha form
+			})
+			.catch((e: any) => {
+				console.log("CAPTCHA ERROR");
+				setCaptchaValue("");
+				console.log(e);
+				setIsLoading(false);
+			});
+
+		console.log(captchaValue);
+
+		//request to Vercel HOST /captcha/captchaValue
+
+		// if response is captcha true -> redirect to captcha form
+	};
+
+	function validateCaptcha(url: string): boolean {
+		return /^[0-9]{4}$/.test(url);
+	}
+
+	const isInvalid = useMemo(() => {
+		if (captchaValue === "") return true;
+
+		return validateCaptcha(captchaValue) ? false : true;
+	}, [captchaValue]);
+
+	useEffect(() => {
+		if (requiresCaptcha) {
+			onOpen();
+		} else {
+			onClose();
+		}
+	}, [requiresCaptcha, onOpen, onClose]);
+
+	const [sharedAbortController, setSharedAbortController] = useState(
+		new AbortController()
+	);
 
 	return (
 		<div style={{ maxWidth: "700px" }}>
+			<Modal
+				size="xl"
+				isOpen={isOpen}
+				onClose={onClose}
+				className={`${requiresCaptcha && captchaImage ? "" : ""} `}
+			>
+				<ModalContent>
+					<Spacer y={4} />
+					<Image
+						className="ml-4"
+						src={`data:image/jpeg;base64,${captchaImage}`}
+						alt="Buffer Image"
+					/>
+					<Spacer y={2} />
+					<form
+						onSubmit={submitCaptcha}
+						className="ml-4 mb-4 flex flex-row items-center flex-wrap"
+					>
+						<Input
+							value={captchaValue}
+							type="text"
+							label="captcha here"
+							variant="bordered"
+							onValueChange={setCaptchaValue}
+							className="max-w-xs"
+							color={isInvalid ? "danger" : "success"}
+							errorMessage={
+								isInvalid && "Please ensure that the captcha is correct."
+							}
+							description={isLoading ? "Working on it..." : "Nice!"}
+						/>
+						<Spacer x={2} />
+						<Button
+							type="submit"
+							color="primary"
+							isLoading={isLoading}
+							style={{ marginBottom: "2em" }}
+						>
+							Submit
+						</Button>
+					</form>
+				</ModalContent>
+			</Modal>
+
 			<h1 style={{ fontSize: "2em" }}>
 				The Sims Resource
 				<br /> Download Scraper
@@ -57,7 +182,13 @@ export default function App() {
 					</Button>
 					<Spacer x={2} />
 
-					<SingleRequest />
+					<SingleRequest
+						requiresCaptcha={requiresCaptcha}
+						setRequiresCaptcha={setRequiresCaptcha}
+						setCaptchaImage={setCaptchaImage}
+						sharedAbortController={sharedAbortController}
+						setSharedAbortController={setSharedAbortController}
+					/>
 				</div>
 			))}
 			<Button

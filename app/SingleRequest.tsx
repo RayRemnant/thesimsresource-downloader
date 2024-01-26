@@ -16,13 +16,21 @@ import { Spacer } from "@nextui-org/spacer";
 import { Image } from "@nextui-org/image";
 import { Divider } from "@nextui-org/divider";
 
-export const SingleRequest = () => {
+export const SingleRequest = ({
+	requiresCaptcha,
+	setRequiresCaptcha,
+	setCaptchaImage,
+	sharedAbortController,
+	setSharedAbortController,
+}: {
+	requiresCaptcha: boolean;
+	setRequiresCaptcha: React.Dispatch<React.SetStateAction<boolean>>;
+	setCaptchaImage: React.Dispatch<React.SetStateAction<any>>;
+	sharedAbortController: AbortController;
+	setSharedAbortController: React.Dispatch<React.SetStateAction<any>>;
+}) => {
 	const [resourceUrl, setResourceUrl] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
-
-	const [requiresCaptcha, setRequiresCaptcha] = useState(false);
-	const [captchaImage, setCaptchaImage] = useState(undefined);
-	const [captchaValue, setCaptchaValue] = useState("");
 
 	const [downloadLink, setDownloadLink] = useState("");
 
@@ -33,45 +41,16 @@ export const SingleRequest = () => {
 		if (inputRef.current) {
 			inputRef.current.focus();
 		}
-	}, []); // The empty dependency array ensures this effect runs only once on mount
-
-	const submitCaptcha = (e: FormEvent<HTMLFormElement>) => {
-		e.preventDefault();
-
-		//extract id from url
-
-		let id = resourceUrl.split("id/")[1];
-
-		setIsLoading(true);
-
-		fetch(`/api/captcha?id=${id}&captchaValue=${captchaValue}`)
-			.then(async (result) => {
-				if (result.status == 200) {
-					setRequiresCaptcha(false);
-					handleSubmit(e);
-				}
-
-				//if captcha true
-				//redirect to captcha form
-			})
-			.catch((e: any) => {
-				setIsLoading(false);
-				console.log(e);
-			});
-
-		console.log(captchaValue);
-
-		//request to Vercel HOST /captcha/captchaValue
-
-		// if response is captcha true -> redirect to captcha form
-	};
+	}, [sharedAbortController]); // The empty dependency array ensures this effect runs only once on mount
 
 	const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 
 		setIsLoading(true);
 		setRequiresCaptcha(false);
-		fetch(`/api?url=${resourceUrl}`)
+
+		//pass function from parent here
+		fetch(`/api?url=${resourceUrl}`, { signal: sharedAbortController.signal })
 			.then(async (result) => {
 				setIsLoading(false);
 
@@ -86,7 +65,14 @@ export const SingleRequest = () => {
 				//if captcha true
 				//show captcha form
 				if (data.captcha) {
-					setRequiresCaptcha(true);
+					setRequiresCaptcha(() => {
+						// Callback function executed after state is updated
+						// Abort all ongoing fetch requests
+						console.log("ABORT FETCH...");
+						sharedAbortController.abort();
+						setSharedAbortController(new AbortController());
+						return true;
+					});
 					setCaptchaImage(data.captcha);
 					return;
 				}
@@ -134,7 +120,9 @@ export const SingleRequest = () => {
 	return (
 		<div className="flex-grow">
 			<form
-				onSubmit={handleSubmit}
+				onSubmit={(e) => {
+					handleSubmit(e);
+				}}
 				className="flex flex-row items-center flex-wrap"
 			>
 				<Input
@@ -177,36 +165,6 @@ export const SingleRequest = () => {
 					""
 				)}
 			</form>
-			{requiresCaptcha && captchaImage ? (
-				<div>
-					<Divider />
-					<Spacer y={4} />
-					<Image
-						src={`data:image/jpeg;base64,${captchaImage}`}
-						alt="Buffer Image"
-					/>
-					<Spacer y={2} />
-					<form
-						onSubmit={submitCaptcha}
-						className="flex flex-row items-center flex-wrap"
-					>
-						<Input
-							value={captchaValue}
-							type="text"
-							label="captcha"
-							variant="bordered"
-							onValueChange={setCaptchaValue}
-							className="max-w-xs"
-						/>
-						<Spacer x={2} />
-						<Button type="submit" color="primary" isLoading={isLoading}>
-							Submit
-						</Button>
-					</form>
-				</div>
-			) : (
-				""
-			)}
 		</div>
 	);
 };
