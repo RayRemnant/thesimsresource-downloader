@@ -41,7 +41,21 @@ export async function GET(request) {
 
 		await page.waitForNavigation()
 
-		return NextResponse.json({ status: 200 });
+		//if we are still on the same page, captcha is wrong
+
+		try {
+			await page.waitForSelector("button.input-button", {
+				visible: true,
+				timeout: 1111,
+			})
+			return NextResponse.json({ error }, { status: 422 });
+
+
+		} catch (e) {
+			return NextResponse.json({ status: 200 });
+		}
+
+
 	} catch (error) {
 		console.log(error)
 
