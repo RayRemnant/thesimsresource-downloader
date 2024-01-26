@@ -48,6 +48,7 @@ export const SingleRequest = ({
 
 		setIsLoading(true);
 		setRequiresCaptcha(false);
+		setDownloadLink("");
 
 		//pass function from parent here
 		fetch(`/api?url=${resourceUrl}`, { signal: sharedAbortController.signal })
