@@ -1,6 +1,6 @@
 # The Sims Resource Downloader
 
-This is an application for automating downloads from https://www.thesimsresource.com/.
+This is an application for automating downloads from [The Sims Resource](https://www.thesimsresource.com/).
 
 ## Technologies Used
 
