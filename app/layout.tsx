@@ -44,7 +44,37 @@ export default function RootLayout({
 						<main className="container mx-auto max-w-7xl pt-16 px-6 flex-grow">
 							{children}
 						</main>
-						<footer className="w-full flex items-center justify-center py-3"></footer>
+						<footer className="w-full flex items-center justify-center py-3">
+							<span className="text-default-600">Made with</span>
+							<Link
+								isExternal
+								className="flex items-center gap-1 text-current"
+								href="https://react.dev/"
+								title="nextui.org homepage"
+							>
+								<p className="text-primary">&nbsp;React</p>
+							</Link>
+							<span className="text-default-600"> , </span>
+
+							<Link
+								isExternal
+								className="flex items-center gap-1 text-current"
+								href="https://nextui.org/"
+								title="nextui.org homepage"
+							>
+								<p className="text-primary">&nbsp;NextUI</p>
+							</Link>
+							<span className="text-default-600">,</span>
+
+							<Link
+								isExternal
+								className="flex items-center gap-1 text-current"
+								href="https://pptr.dev/"
+								title="nextui.org homepage"
+							>
+								<p className="text-primary">&nbsp;Puppeteer</p>
+							</Link>
+						</footer>
 					</div>
 				</Providers>
 			</body>
