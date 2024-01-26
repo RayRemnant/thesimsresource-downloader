@@ -50,7 +50,7 @@ export default function RootLayout({
 								isExternal
 								className="flex items-center gap-1 text-current"
 								href="https://react.dev/"
-								title="nextui.org homepage"
+								title="React homepage"
 							>
 								<p className="text-primary">&nbsp;React</p>
 							</Link>
@@ -59,8 +59,28 @@ export default function RootLayout({
 							<Link
 								isExternal
 								className="flex items-center gap-1 text-current"
+								href="https://nextjs.org/"
+								title="Next.js homepage"
+							>
+								<p className="text-primary">&nbsp;Next.js</p>
+							</Link>
+							<span className="text-default-600"> , </span>
+
+							<Link
+								isExternal
+								className="flex items-center gap-1 text-current"
+								href="https://www.typescriptlang.org/"
+								title="Typescript homepage"
+							>
+								<p className="text-primary">&nbsp;TypeScript</p>
+							</Link>
+							<span className="text-default-600"> , </span>
+
+							<Link
+								isExternal
+								className="flex items-center gap-1 text-current"
 								href="https://nextui.org/"
-								title="nextui.org homepage"
+								title="NextUI homepage"
 							>
 								<p className="text-primary">&nbsp;NextUI</p>
 							</Link>
@@ -70,7 +90,7 @@ export default function RootLayout({
 								isExternal
 								className="flex items-center gap-1 text-current"
 								href="https://pptr.dev/"
-								title="nextui.org homepage"
+								title="Puppeteer homepage"
 							>
 								<p className="text-primary">&nbsp;Puppeteer</p>
 							</Link>
