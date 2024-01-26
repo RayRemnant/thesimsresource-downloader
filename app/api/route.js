@@ -4,7 +4,11 @@ import { NextResponse } from "next/server";
 const init = require("./_init.js")
 const cookiesStorage = require("./db/_cookiesStorage.js")
 
+const abort = require('./_abort');
+
 export async function GET(request) {
+
+	abort.setSharedValue(false)
 
 	const searchParams = request.nextUrl.searchParams
 	const url = searchParams.get('url')
@@ -68,6 +72,18 @@ export async function GET(request) {
 			console.log("CHECKING IF CAPTCHA REQUEST PRESENT...")
 			const captchaInputElement = await page.waitForSelector(captchaInput, { visible: true, timeout: 5555 })
 			console.log("CAPTCHA PRESENT, RESOLVE MANUALLY")
+
+			//check abort status
+			const abort = require('./_abort');
+			const abortStatus = abort.getSharedValue()
+			console.log("ABORT STATUS: ", abortStatus)
+
+			if (abortStatus) {
+				console.log("ABORTING...")
+				return NextResponse.json("ABORTED", { status: 500 });
+			}
+
+			abort.setSharedValue(true)
 
 			await cookiesStorage.save(await page.cookies())
 
