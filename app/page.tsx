@@ -153,6 +153,9 @@ export default function App() {
 						<li>Insert the URL of the item you want to download</li>
 
 						<Spacer x={1} />
+						<li>Complete captcha if prompted (should last 24 hours)</li>
+
+						<Spacer x={1} />
 						<li>Wait around 30 seconds to complete</li>
 
 						<Spacer x={1} />
