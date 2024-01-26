@@ -66,7 +66,7 @@ module.exports = async (page) => {
 				try {
 					if (response.request().method().toUpperCase() != "OPTIONS") {
 						const url = response.url();
-						console.log("STATUS: ", response.status());
+						//console.log("STATUS: ", response.status());
 						//console.log(url)
 						if (url.includes(".package") || url.includes(".zip")) {
 							// Assuming it's a .package file download
