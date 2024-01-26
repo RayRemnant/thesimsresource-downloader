@@ -12,7 +12,7 @@ module.exports = async function init() {
 		headless: true,
 		// args: ['--proxy-server=http://158.247.199.162:3128'],
 	});
-	const page = (await browser.pages())[0];
+	const page = await browser.newPage()
 
 	const device_width = 1920;
 	const device_height = 1080;
