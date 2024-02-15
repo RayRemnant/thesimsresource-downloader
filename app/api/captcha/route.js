@@ -31,10 +31,13 @@ export async function GET(request) {
 		const captchaInput = `input[name="captchavalue"]`;
 
 		await page.type(captchaInput, captchaValue);
+		await page.screenshot({ path: 'generated/afterTyping.png' });
+
 
 		//await page.screenshot({ path: __dirname + '/troubleshoot/captchaTyped.png' });
 
 		const submitButton = await page.waitForSelector("button.input-button")
+		console.log("CLICKING SUBMIT...")
 		await submitButton.click()
 
 		//check if captcha is okay
