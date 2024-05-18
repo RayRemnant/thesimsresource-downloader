@@ -102,6 +102,7 @@ export const SingleRequest = ({
 
 	function validateUrl(url: string): boolean {
 		try {
+			return url.includes("https://www.thesimsresource.com/");
 			new URL(url);
 			return true;
 		} catch (error) {
